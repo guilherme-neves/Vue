@@ -1,0 +1,143 @@
+
+function AbandonoDao(connection) {
+    this._connection = connection
+}
+
+
+AbandonoDao.prototype.abandonoChamadaPorHora = function (callback) {
+    this._connection.query("select  count ( c1.\"call_id\" ) as \"count\", EXTRACT (HOUR FROM c1.\"call_start_time\")||':00 - '||(EXTRACT (HOUR FROM c1.\"call_start_time\")+1)||':00' as \"label\" "
+        + " from tblcallscc cc1, tblcalls c1,tblswitches s where "
+        + " c1.\"call_start_time\" >= '2018-06-18' "
+        + "	and c1.\"call_start_time\" <= (\"date\"('2018-06-20') + interval '24 hours') "
+        + "	and cc1.\"cc_call_id\" = c1.\"call_id\" "
+        + "	and cc1.\"cc_talk_time\" = 0 "
+        + "	and cc1.\"cc_callback\" = 0 "
+        + "	and cc1.\"cc_agent_id\" = 0 "
+        + "  group by EXTRACT (HOUR FROM c1.\"call_start_time\")"
+        + "  order by  EXTRACT (HOUR FROM c1.\"call_start_time\")", callback)
+
+}
+
+
+AbandonoDao.prototype.abandonoChamadaEstatistica = function (callback) {
+    this._connection.query("SELECT  distinct tblqueues.\"queue_name\","
+        + "  count (cc.\"cc_call_id\") as \"Count of abandoned calls\",  "
+        + " 	max (cc.\"cc_queue_time\") as \"Max Queue Time\", "
+        + "	max (cc.\"cc_pickup_time\") as \"Max PickUP Time\", "
+        + " 	sum (cc.\"cc_talk_time\") as \"Talk Time\","
+        + "	(SELECT count (tblcallscc.\"cc_call_id\") "
+        + "	FROM tblcalls, tblcallscc , tblqueues q "
+        + "	where tblcalls.\"call_start_time\" >= '2018-06-18' "
+        + "	and tblcalls.\"call_start_time\" <= (\"date\"('2018-06-20') + interval '24 hours') "
+        + "	and tblcallscc.\"cc_queue_id\" = q.\"queue_id\" "
+        + "	and tblqueues.\"queue_name\"=q.\"queue_name\" "
+        + "	and tblcalls.\"call_id\" = tblcallscc.\"cc_call_id\" "
+        + "	and tblcallscc.\"cc_queue_time\" >= 0 "
+        + "	and tblcallscc.\"cc_queue_time\" < 31 "
+        + " 	and tblcallscc.\"cc_talk_time\" = 0 "
+        + "	and tblcallscc.\"cc_callback\" = 0 "
+        + "   and tblcallscc.\"cc_agent_id\" = 0 "
+        + "   and(tblcallscc.\"cc_queue_time\" + tblcallscc.\"cc_pickup_time\") >= q.queue_abandoned_calls_threshold ) as \"Count0to30\", "
+        + "   (SELECT count(tblcallscc.\"cc_call_id\") FROM tblcalls, tblcallscc, tblqueues q "
+        + " where tblcalls.\"call_start_time\" >= '2018-06-18' "
+        + " and tblcalls.\"call_start_time\" <= (\"date\"('2018-06-20') + interval '24 hours') "
+        + " and tblcallscc.\"cc_queue_id\" = q.\"queue_id\" "
+        + " and tblqueues.\"queue_name\" = q.\"queue_name\" "
+        + " and tblcalls.\"call_id\" = tblcallscc.\"cc_call_id\" "
+        + " and tblcallscc.\"cc_queue_time\" > 30 "
+        + " and tblcallscc.\"cc_queue_time\" < 61 "
+        + " and tblcallscc.\"cc_talk_time\" = 0 "
+        + " and tblcallscc.\"cc_callback\" = 0 "
+        + " and tblcallscc.\"cc_agent_id\" = 0 "
+        + " and(tblcallscc.\"cc_queue_time\" + tblcallscc.\"cc_pickup_time\") >= q.queue_abandoned_calls_threshold) as \"Count31to60\", "
+        + "    (SELECT count(tblcallscc.\"cc_call_id\")FROM tblcalls, tblcallscc, tblqueues q "
+        + "  where tblcalls.\"call_start_time\" >= '2018-06-18' "
+        + " and tblcalls.\"call_start_time\" <= (\"date\"('2018-06-20') + interval '24 hours')"
+        + " and tblcallscc.\"cc_queue_id\" = q.\"queue_id\" "
+        + " and tblqueues.\"queue_name\" = q.\"queue_name\" "
+        + "  and tblcalls.\"call_id\" = tblcallscc.\"cc_call_id\" "
+        + "  and tblcallscc.\"cc_queue_time\" > 60 "
+        + " and tblcallscc.\"cc_queue_time\" < 91 "
+        + " and tblcallscc.\"cc_talk_time\" = 0 "
+        + " and tblcallscc.\"cc_callback\" = 0 "
+        + "  and tblcallscc.\"cc_agent_id\" = 0 "
+        + " and(tblcallscc.\"cc_queue_time\" + tblcallscc.\"cc_pickup_time\") >= q.queue_abandoned_calls_threshold) as \"Count61to90\", "
+        + "      (SELECT count(tblcallscc.\"cc_call_id\") "
+        + "  FROM tblcalls, tblcallscc, tblqueues q "
+        + "  where tblcalls.\"call_start_time\" >= '2018-06-18' "
+        + "  and tblcalls.\"call_start_time\" <= (\"date\"('2018-06-20') + interval '24 hours') "
+        + "  and tblcallscc.\"cc_queue_id\" = q.\"queue_id\" "
+        + "  and tblqueues.\"queue_name\" = q.\"queue_name\" "
+        + "  and tblcalls.\"call_id\" = tblcallscc.\"cc_call_id\" "
+        + "  and tblcallscc.\"cc_queue_time\" > 90 "
+        + "  and tblcallscc.\"cc_queue_time\" < 121 "
+        + "  and tblcallscc.\"cc_talk_time\" = 0 "
+        + "  and tblcallscc.\"cc_callback\" = 0 "
+        + "  and tblcallscc.\"cc_agent_id\" = 0 "
+        + "  and(tblcallscc.\"cc_queue_time\" + tblcallscc.\"cc_pickup_time\") >= q.queue_abandoned_calls_threshold) as \"Count91to120\", "
+        + "      (SELECT count(tblcallscc.\"cc_call_id\") FROM tblcalls, tblcallscc, tblqueues q "
+        + "  where tblcalls.\"call_start_time\" >= '2018-06-18' "
+        + "  and tblcalls.\"call_start_time\" <= (\"date\"('2018-06-20') + interval '24 hours') "
+        + "  and tblcallscc.\"cc_queue_id\" = q.\"queue_id\" "
+        + "  and tblqueues.\"queue_name\" = q.\"queue_name\" "
+        + "  and tblcalls.\"call_id\" = tblcallscc.\"cc_call_id\" "
+        + "  and tblcallscc.\"cc_queue_time\" > 120 "
+        + "  and tblcallscc.\"cc_queue_time\" < 301 "
+        + "  and tblcallscc.\"cc_talk_time\" = 0 "
+        + "  and tblcallscc.\"cc_callback\" = 0 "
+        + "  and tblcallscc.\"cc_agent_id\" = 0 "
+        + "  and(tblcallscc.\"cc_queue_time\" + tblcallscc.\"cc_pickup_time\") >= q.queue_abandoned_calls_threshold) as \"Count121to300\", "
+        + "      (SELECT count(tblcallscc.\"cc_call_id\")  FROM tblcalls, tblcallscc, tblqueues q "
+        + "  where tblcalls.\"call_start_time\" >= '2018-06-18' "
+        + "  and tblcalls.\"call_start_time\" <= (\"date\"('2018-06-20') + interval '24 hours') "
+        + "  and tblcallscc.\"cc_queue_id\" = q.\"queue_id\" "
+        + "  and tblqueues.\"queue_name\" = q.\"queue_name\" "
+        + "  and tblcalls.\"call_id\" = tblcallscc.\"cc_call_id\" "
+        + "  and tblcallscc.\"cc_queue_time\" > 300 "
+        + "  and tblcallscc.\"cc_talk_time\" = 0 "
+        + "  and tblcallscc.\"cc_callback\" = 0 "
+        + "   and tblcallscc.\"cc_agent_id\" = 0 "
+        + "   and(tblcallscc.\"cc_queue_time\" + tblcallscc.\"cc_pickup_time\") >= q.queue_abandoned_calls_threshold	) as \"Count300up\", "
+        + "      (SELECT count(tblcallscc.\"cc_call_id\") FROM tblcalls, tblcallscc, tblqueues q "
+        + "  where tblcalls.\"call_start_time\" >= '2018-06-18' "
+        + "  and tblcalls.\"call_start_time\" <= (\"date\"('2018-06-20') + interval '24 hours') "
+        + "  and tblcallscc.\"cc_queue_id\" = q.\"queue_id\" "
+        + "  and tblqueues.\"queue_name\" = q.\"queue_name\" "
+        + "  and tblcalls.\"call_id\" = tblcallscc.\"cc_call_id\") as \"Total Calls\" "
+        + "   FROM tblcalls, tblcallscc cc, tblqueues "
+        + "   where tblcalls.\"call_start_time\" >= '2018-06-18' "
+        + "  and tblcalls.\"call_start_time\" <= (\"date\"('2018-06-20') + interval '24 hours') "
+        + "  and tblcalls.\"call_id\" = cc.\"cc_call_id\" "
+        + "  and cc.\"cc_talk_time\" = 0 "
+        + "  and cc.\"cc_callback\" = 0 "
+        + "  and cc.\"cc_agent_id\" = 0 "
+        + "  and cc.\"cc_queue_id\" = tblqueues.\"queue_id\" "
+        + "  and(cc.\"cc_queue_time\" + cc.\"cc_pickup_time\") >= tblqueues.queue_abandoned_calls_threshold "
+        + "  GROUP BY tblqueues.\"queue_name\" "
+        + "  ORDER BY tblqueues.\"queue_name\" ", callback)
+}
+
+
+AbandonoDao.prototype.abandonoChamadaEstatisticaDetalhada = function (callback) {
+    this._connection.query("select distinct cc.\"cc_call_id\" ,tblcalls.\"call_start_time\", "
+        + "	tblqueues.queue_name,cc.\"cc_queue_time\",cc.\"cc_pickup_time\", "
+        + "	getprotectedcallnumber(getcallnumber(tblcalls.\"call_calling_number\")) as \"call_calling_number\", "
+        + "	cc_contact_firstname, cc_contact_surname, cc_contact_company  "
+        + " from tblcallscc cc, tblcalls left outer join tblcontactcache on call_contact_cache_id=cc_entry_id, tblqueues,tblswitches s "
+        + " where  tblcalls.\"call_start_time\" >= '2018-06-18' "
+        + "    and tblcalls.\"call_start_time\" <= (\"date\"('2018-06-20') + interval '24 hours') "
+        + "     and cc.\"cc_call_id\" = tblcalls.\"call_id\" "
+        + "     and cc.\"cc_talk_time\" = 0  "
+        + "    and cc.\"cc_agent_id\" = 0  "
+        + "     and cc.\"cc_callback\" = 0  "
+        + "    and cc.\"cc_queue_id\" = tblqueues.queue_id "
+        + "    and (cc.\"cc_queue_time\"+cc.\"cc_pickup_time\") >= tblqueues.queue_abandoned_calls_threshold "
+        + " order by tblcalls.\"call_start_time\" ", callback)
+}
+
+
+
+
+module.exports = function () {
+    return AbandonoDao
+}
