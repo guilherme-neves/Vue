@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "bootstrap": "4.0.0",
-    "bootstrap-vue": "2.0.0-rc.1",
+    "bootstrap-vue": "2.0.0-rc.12",
     "chart.js": "2.7.1",
     "flag-icon-css": "2.9.0",
     "font-awesome": "^4.7.0",
