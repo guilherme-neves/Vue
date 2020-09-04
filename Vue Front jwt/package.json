@@ -78,7 +78,7 @@
     "chromedriver": "2.35.0",
     "cross-spawn": "6.0.4",
     "nightwatch": "0.9.19",
-    "node-sass": "4.7.2",
+    "node-sass": "4.13.1",
     "sass-loader": "6.0.6",
     "selenium-server": "3.8.1",
     "semver": "5.5.0",
